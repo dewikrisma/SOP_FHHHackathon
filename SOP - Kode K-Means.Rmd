@@ -1,0 +1,94 @@
+---
+title: "Unsupervised Learning - Clustering"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+Install some Packages if we have not installed it yet
+
+```{r}
+#install.packages("dplyr") #data manipulation
+#install.packages("corrplot") #data visualization
+#install.packages("fmsb") #data visualization
+```
+
+Load all Packages that have been installed
+
+```{r}
+library(dplyr)
+library(corrplot)
+library(fmsb)
+library(factoextra)
+```
+
+Import Dataset
+
+```{r}
+data_ec <- read.csv("../data/budget_vi.csv")
+data_ec = data_ec[3:5]
+head(data_ec)
+dim(data_ec)
+```
+
+
+## K-Means Clustering
+
+```{r}
+#we need to rescaling the data so that the units are the same
+data_ec_scale <- scale(data_ec, scale = T)
+
+#we need to decide the best number of cluster using smallest within-clusters sum of squares
+set.seed(123)
+k_max <- 15
+wss <- sapply(1:k_max, 
+              function(k) {kmeans(data_ec_scale, k, nstart = 10)$tot.withinss})
+plot(1:k_max, wss, type = "b", pch = 19, frame = FALSE, xlab = "Number of Clusters K", ylab = "Total Within-clusters Sum of Squares")
+abline(v = 3, lty = 2)
+```
+
+```{r}
+#let's build kmeans clustering with k=4
+set.seed(123)
+kmeans_res <- kmeans(data_ec_scale, centers = 3)
+kmeans_res$cluster
+kmeans_res$size
+```
+
+# Heatmap
+
+```{r}
+heatmap(data_ec_scale)
+```
+
+# K-Means Cluster Profiling
+
+```{r}
+#let's plot our clusters result
+pairs(data_ec_scale, col = c(1:4)[kmeans_res$cluster], pch = 16)
+```
+
+## Cluster Visualization
+
+```{r}
+#biplot
+#we need to calculate PCA
+data_ec_pca <- prcomp(data_ec, scale = T)
+data_ec_pca
+
+biplot(data_ec_pca)
+fviz_pca_biplot(data_ec_pca, label="var", habillage=as.factor(kmeans_res$cluster)) +
+  labs(color=NULL) + ggtitle("") +
+  theme(text = element_text(size = 15),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.key = element_rect(fill = "white"),
+        legend.position="none")
+```
+
+
